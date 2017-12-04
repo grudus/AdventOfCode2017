@@ -1,10 +1,5 @@
 package advent
 
-import advent.Day03.distanceFromMiddle
-import advent.Day03.findDepth
-import advent.Day03.firstStar
-import sun.awt.X11.Depth
-
 /*You come across an experimental new kind of memory stored on an infinite two-dimensional grid.
 
 Each square on the grid is allocated in a spiral pattern starting at a location marked 1 and then counting up while spiraling outward. For example, the first few squares are allocated like this:
@@ -50,8 +45,6 @@ What is the first value written that is larger than your puzzle input?
 */
 
 object Day03 {
-    data class MinMax(val min: Int, val max: Int)
-
     fun findDepth(number: Int): Int {
         tailrec fun depth(currentLevel: Int): Int =
                 if (currentLevel * currentLevel < number) depth(currentLevel + 2) else currentLevel
@@ -68,10 +61,55 @@ object Day03 {
     fun firstStar(input: Int) = distanceFromMiddle(input, findDepth(input))
 
 
+    fun secondStar(input: Int): Int {
+        val size = 21
+        val data = Array(size, { Array(size, { 0 }) })
+        var row = size / 2
+        var col = size / 2
+        data[row][col] = 1
+        var currentLevel = 3
+        var indexInLevel = 1
+        var direction = 0
+        var number = 0
+        col++
+        while (number <= input) {
+            number = calculate(data, row, col)
+            data[row][col] = number
+
+            when (direction) {
+                0 -> row--
+                1 -> col--
+                2 -> row++
+                3 -> col++
+                5 -> {
+                    col++; direction = 0
+                }
+            }
+
+            indexInLevel++
+            if (indexInLevel == currentLevel - 1) {
+                indexInLevel = 0
+                direction++
+            }
+            if (direction == 4) {
+                direction = 5
+                currentLevel += 2
+            }
+        }
+
+        return number
+    }
+
+    private fun calculate(data: Array<Array<Int>>, row: Int, col: Int) =
+            (-1..1).flatMap { r -> (-1..1).map { c -> Pair(r, c) } }
+                    .sumBy { (r, c) -> data[row + r][col + c] }
+
+
 }
 
 fun main(args: Array<String>) {
     val input = 368078
 
-    println(firstStar(input))
+    println(Day03.firstStar(input))
+    println(Day03.secondStar(input))
 }
