@@ -41,7 +41,7 @@ object Day06 {
         val element = data.joinToString()
 
         return if (list.contains(element))
-            return returnFunction(steps, list.indexOf(element))
+             returnFunction(steps, list.indexOf(element))
         else calculate(list + element, data, steps + 1, returnFunction)
     }
 
