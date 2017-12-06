@@ -30,7 +30,7 @@ object Day06 {
 
 
     fun firstStar(input: Array<Int>) = calculate(listOf(input.joinToString()), input, 1) {steps, _ -> steps}
-    fun secondStar(input: Array<Int>) = calculate(listOf(input.toString()), input, 1) {steps, index -> steps - index}
+    fun secondStar(input: Array<Int>) = calculate(listOf(input.joinToString()), input, 1) {steps, index -> steps - index}
 
     tailrec private fun calculate(list: List<String>, data: Array<Int>, steps: Int, returnFunction: (Int, Int) -> Int): Int {
         val (index, max) = data.withIndex().maxBy { it.value }!!
