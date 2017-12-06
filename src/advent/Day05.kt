@@ -41,39 +41,32 @@ How many steps does it now take to reach the exit?
 */
 
 object Day05 {
-    fun firstStar(input: List<Int>): Int {
-        val array = input.toTypedArray()
-        var steps = 0
-        var currentIndex = 0
-        while (currentIndex < array.size && currentIndex >= 0) {
-            currentIndex += array[currentIndex]++
-            steps++
-        }
-        return steps
+
+
+    fun firstStar(input: IntArray) = calculate(input, 0, 0)
+    { arr, i -> arr.mapOnIndex(i) { it + 1 } }
+
+    fun secondStar(input: IntArray): Int = calculate(input, 0, 0)
+    { arr, i -> arr.mapOnIndex(i) { if (it >= 3) it - 1 else it + 1 } }
+
+
+    private fun IntArray.mapOnIndex(index: Int, mapper: (Int) -> Int): IntArray {
+        val newArray = copyOf()
+        newArray[index] = mapper(newArray[index])
+        return newArray
     }
 
-    fun secondStar(input: List<Int>): Int {
-        val array = input.toTypedArray()
-        var steps = 0
-        var currentIndex = 0
-        var previousIndex = 0
-        while (currentIndex < array.size && currentIndex >= 0) {
-            currentIndex += array[currentIndex]
-            if (array[previousIndex] >= 3)
-                array[previousIndex]--
-            else array[previousIndex]++
-
-            steps++
-            previousIndex = currentIndex
-        }
-        return steps
+    private tailrec fun calculate(data: IntArray, steps: Int, index: Int, newArray: (IntArray, Int) -> IntArray): Int {
+        return if (index < data.size && index >= 0)
+            calculate(newArray(data, index), steps + 1, index + data[index], newArray)
+        else steps
     }
 }
 
-
 fun main(args: Array<String>) {
-    val input = File("src/advent/Day05-input").readLines().map { it.toInt() }
+    val input = File("src/advent/Day05-input").readLines()
+            .map { it.toInt() }
+            .toIntArray()
     println(Day05.firstStar(input))
     println(Day05.secondStar(input))
-
 }
