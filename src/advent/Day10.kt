@@ -76,7 +76,7 @@ object Day10 {
                     .let { it[0] * it[1] }
 
 
-    fun secondStar(input: String): String {
+    fun secondStar(input: String, base: Array<Int> = array): String {
         val ascii: List<Int> = input.map { it.toInt() } + listOf(17, 31, 73, 47, 23)
 
         val hashed: List<Int> = createHash(array.copyOf(), 64, ascii, 0, 0, ascii)
@@ -87,7 +87,7 @@ object Day10 {
         }
     }
 
-    private tailrec fun createHash(data: Array<Int>, iterations: Int, lengths: List<Int>, index: Int, skip: Int, originalList: List<Int>): List<Int> {
+    tailrec fun createHash(data: Array<Int>, iterations: Int, lengths: List<Int>, index: Int, skip: Int, originalList: List<Int>): List<Int> {
         if (lengths.isEmpty()) {
             return if (iterations == 1) data.toList()
             else createHash(data, iterations - 1, originalList, index, skip, originalList)
