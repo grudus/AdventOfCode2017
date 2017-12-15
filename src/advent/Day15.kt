@@ -90,22 +90,19 @@ After 5 million pairs, but using this new generator logic, what is the judge's f
 */
 
 object Day15 {
-    data class Generators(private val aValue: Long, private val bValue: Long) {
+    data class Generators(private val generatorA: Long, private val generatorB: Long) {
         fun next() = Generators(nextA(), nextB())
-        fun matches() = toBinary(aValue, 32).substring(16) == toBinary(bValue, 32).substring(16)
+        fun matches() = toBinary(generatorA, 32).substring(16) == toBinary(generatorB, 32).substring(16)
 
         fun nextValid(): Generators {
-            var newAValue = nextA()
-            while (newAValue % 4 != 0L) newAValue = nextA(newAValue)
+            val a = generateSequence(nextA()) { nextA(it) }.takeWhile { it % 4 != 0L }.lastOrNull() ?: generatorA
+            val b = generateSequence(nextB()) { nextB(it) }.takeWhile { it % 8 != 0L }.lastOrNull() ?: generatorB
 
-            var newBValue = nextB()
-            while (newBValue % 8 != 0L) newBValue = nextB(newBValue)
-
-            return Generators(newAValue, newBValue)
+            return Generators(nextA(a), nextB(b))
         }
 
-        private fun nextA(a: Long = aValue) = (a * 16807) % 2147483647
-        private fun nextB(b: Long = bValue) = (b * 48271) % 2147483647
+        private fun nextA(a: Long = generatorA) = (a * 16807) % 2147483647
+        private fun nextB(b: Long = generatorB) = (b * 48271) % 2147483647
     }
 
     fun firstStar(input: Generators) = judge(input, 40_000_000) { it.next() }
