@@ -92,7 +92,7 @@ After 5 million pairs, but using this new generator logic, what is the judge's f
 object Day15 {
     data class Generators(private val generatorA: Long, private val generatorB: Long) {
         fun next() = Generators(nextA(), nextB())
-        fun matches() = toBinary(generatorA, 32).substring(16) == toBinary(generatorB, 32).substring(16)
+        fun matches() = generatorA and 0xFFFF == generatorB and 0xFFFF
 
         fun nextValid(): Generators {
             val a = generateSequence(nextA()) { nextA(it) }.takeWhile { it % 4 != 0L }.lastOrNull() ?: generatorA
@@ -112,11 +112,6 @@ object Day15 {
     private fun judge(firstValue: Generators, range: Long, next: (Generators) -> Generators): Int =
             (1..range).fold(Pair(next(firstValue), 0),
                     { (gen, num), _ -> Pair(next(gen), if (gen.matches()) num + 1 else num) }).second
-}
-
-fun toBinary(number: Long, digits: Int): String {
-    val binary = java.lang.Long.toBinaryString(number)
-    return (0 until (digits - binary.length)).joinToString("") { "0" } + binary
 }
 
 fun main(args: Array<String>) {
