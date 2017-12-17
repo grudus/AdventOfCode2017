@@ -30,8 +30,19 @@ Eventually, after 2017 insertions, the section of the circular buffer near the l
 Perhaps, if you can identify the value that will ultimately be after the last value written (2017), you can short-circuit the spinlock. In this example, that would be 638.
 
 What is the value after 2017 in your completed circular buffer?
-
 */
+
+/*--- Part Two ---
+
+The spinlock does not short-circuit. Instead, it gets more angry. At least, you assume that's what happened; it's spinning significantly faster than it was a moment ago.
+
+You have good news and bad news.
+
+The good news is that you have improved calculations for how to stop the spinlock. They indicate that you actually need to identify the value after 0 in the current state of the circular buffer.
+
+The bad news is that while you were determining this, the spinlock has just finished inserting its fifty millionth value (50000000).
+
+What is the value after 0 the moment 50000000 is inserted?*/
 
 object Day17 {
     private fun <T> List<T>.insertAt(index: Int, value: T) = take(index) + value + drop(index)
@@ -52,17 +63,17 @@ object Day17 {
 
     fun secondStar(input: Int): Int {
 
-        tailrec fun spinlock(currentIndex: Int, currentSize: Int, currentValue: Int, valueAfter0: Int, indexOf0: Int): Int {
-            if (currentValue == 50_000_000)
+        tailrec fun spinlock(currentIndex: Int, currentSize: Int, valueAfter0: Int, indexOf0: Int): Int {
+            if (currentSize == 50_000_000)
                 return valueAfter0
 
             val newIndex = (currentIndex + input) % currentSize + 1
             val newIndexOf0 = if (newIndex == indexOf0) indexOf0 + 1 else indexOf0
-            val newValueAfter0 = if (newIndex == indexOf0 + 1) currentValue else valueAfter0
-            return spinlock(newIndex, currentSize + 1, currentValue + 1, newValueAfter0, newIndexOf0)
+            val newValueAfter0 = if (newIndex == indexOf0 + 1) currentSize else valueAfter0
+            return spinlock(newIndex,  currentSize + 1, newValueAfter0, newIndexOf0)
         }
 
-        return spinlock(currentIndex = 0, currentSize = 1, currentValue = 1, valueAfter0 = -1, indexOf0 = 0)
+        return spinlock(currentIndex = 0, currentSize = 1, valueAfter0 = -1, indexOf0 = 0)
     }
 
 }
