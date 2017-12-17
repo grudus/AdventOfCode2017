@@ -1,5 +1,6 @@
 package advent
 
+import advent.Day13.Direction.*
 import java.io.File
 
 
@@ -282,17 +283,66 @@ What is the fewest number of picoseconds that you need to delay the packet to pa
 
 
 object Day13 {
+    enum class Direction(val nextValue: (Int) -> Int) {
+        UP({ it - 1 }),
+        DOWN({ it + 1 });
 
-    data class Layer(val depth: Int, val range: Int)
+        fun next() = values()[(ordinal + 1) % values().size]
+    }
+
+    data class Layer(val depth: Int, val range: Int,  val currentRange: Int = 0, private val direction: Direction = DOWN) {
+        fun move(): Layer {
+            val dir = if ((currentRange == 0 && direction == UP) || (currentRange == range - 1 && direction == DOWN)) direction.next() else direction
+            return Layer(depth, range, dir.nextValue(currentRange), dir)
+        }
+
+        fun stepsToRange(): Int {
+            return if (direction == DOWN) range - 1 + (range - 1 - currentRange)
+            else currentRange - 1
+        }
+    }
 
     fun firstStar(input: List<String>) =
             input.map { it.split(": ") }
                     .map { Layer(it[0].toInt(), it[1].toInt()) }
-                    .filter { it.depth % ((it.range - 1) * 2) == 0 }
+                    .filter { it.depth % it.stepsToRange() == 0 }
                     .sumBy { it.range * it.depth }
+
+    fun secondStar(input: List<String>): Int {
+        var layers = input.map { it.split(": ") }
+                .map { Layer(it[0].toInt(), it[1].toInt()) }
+
+        var delay = 0
+        var prevLayers = layers.toList()
+
+        while (true) {
+            var found = false
+            val maxDepth = layers.maxBy { it.depth }!!.depth
+
+            for(i in 0 ..maxDepth) {
+                val current = prevLayers.find { it.depth == i }
+                if (current == null) {
+                    prevLayers = prevLayers.map { it.move() }
+                    continue
+                }
+                else if (current.currentRange == 0) {
+                    found = true
+                    break
+                }
+                prevLayers = prevLayers.map { it.move() }
+            }
+            if (!found)
+                return delay
+
+            delay++
+            prevLayers = layers.map { it.move() }
+            layers = prevLayers.toList()
+
+        }
+    }
 }
 
 fun main(args: Array<String>) {
     val input = File("src/advent/Day13-input").readLines()
-    println(Day13.firstStar(input))
+    println(Day13.secondStar(input))
 }
