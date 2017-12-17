@@ -34,19 +34,35 @@ What is the value after 2017 in your completed circular buffer?
 */
 
 object Day17 {
+    private fun <T> List<T>.insertAt(index: Int, value: T) = take(index) + value + drop(index)
 
     fun firstStar(input: Int): Int {
 
-        tailrec fun spinlock(values: MutableList<Int>, currentIndex: Int, currentValue: Int): Int {
-            if (currentValue == 2017)
-                return values[currentIndex + 1]
-
-            val newIndex = (currentIndex + input) % values.size + 1
-            values.add(newIndex, currentValue + 1)
-            return spinlock(values, newIndex, currentValue + 1)
-        }
+        tailrec fun spinlock(values: List<Int>, currentIndex: Int, currentValue: Int): Int =
+                if (currentValue == 2017)
+                    values[currentIndex + 1]
+                else {
+                    val newIndex = (currentIndex + input) % values.size + 1
+                    spinlock(values.insertAt(newIndex, currentValue + 1), newIndex, currentValue + 1)
+                }
 
         return spinlock(mutableListOf(0), 0, 0)
+    }
+
+
+    fun secondStar(input: Int): Int {
+
+        tailrec fun spinlock(currentIndex: Int, currentSize: Int, currentValue: Int, valueAfter0: Int, indexOf0: Int): Int {
+            if (currentValue == 50_000_000)
+                return valueAfter0
+
+            val newIndex = (currentIndex + input) % currentSize + 1
+            val newIndexOf0 = if (newIndex == indexOf0) indexOf0 + 1 else indexOf0
+            val newValueAfter0 = if (newIndex == indexOf0 + 1) currentValue else valueAfter0
+            return spinlock(newIndex, currentSize + 1, currentValue + 1, newValueAfter0, newIndexOf0)
+        }
+
+        return spinlock(currentIndex = 0, currentSize = 1, currentValue = 1, valueAfter0 = -1, indexOf0 = 0)
     }
 
 }
@@ -54,4 +70,5 @@ object Day17 {
 fun main(args: Array<String>) {
     val input = 377
     println(Day17.firstStar(input))
+    println(Day17.secondStar(input))
 }
