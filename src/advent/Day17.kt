@@ -57,7 +57,7 @@ object Day17 {
                     spinlock(values.insertAt(newIndex, currentValue + 1), newIndex, currentValue + 1)
                 }
 
-        return spinlock(mutableListOf(0), 0, 0)
+        return spinlock(listOf(0), 0, 0)
     }
 
 
