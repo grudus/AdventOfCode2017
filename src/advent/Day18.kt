@@ -1,6 +1,7 @@
 package advent
 
 import java.io.File
+import java.util.*
 
 /*-- Day 18: Duet ---
 
@@ -19,7 +20,7 @@ rcv X recovers the frequency of the last sound played, but only when the value o
 jgz X Y jumps with an offset of the value of Y, but only if the value of X is greater than zero. (An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
 Many of the instructions can take either a register (a single letter) or a number. The value of a register is the integer it contains; the value of a number is that number.
 
-After each jump instruction, the program continues with the instruction to which the jump jumped. After any other instruction, the program continues with the next instruction. Continuing (or jumping) off either end of the program terminates it.
+After each jump instruction, the program continues with  the instruction to which the jump jumped. After any other instruction, the program continues with the next instruction. Continuing (or jumping) off either end of the program terminates it.
 
 For example:
 
@@ -45,12 +46,17 @@ What is the value of the recovered frequency (the value of the most recently pla
 
 /*--- Part Two ---
 
-As you congratulate yourself for a job well done, you notice that the documentation has been on the back of the tablet this entire time. While you actually got most of the instructions correct, there are a few key differences. This assembly code isn't about sound at all - it's meant to be run twice at the same time.
+As you congratulate yourself for a job well done, you notice that the documentation has been on the back of the tablet
+this entire time. While you actually got most of the instructions correct, there are a few key differences.
+This assembly code isn't about sound at all - it's meant to be run twice at the same time.
 
-Each running copy of the program has its own set of registers and follows the code independently - in fact, the programs don't even necessarily run at the same speed. To coordinate, they use the send (snd) and receive (rcv) instructions:
+Each running copy of the program has its own set of registers and follows the code independently - in fact,
+the programs don't even necessarily run at the same speed. To coordinate, they use the send (snd) and receive (rcv) instructions:
 
-snd X sends the value of X to the other program. These values wait in a queue until that program is ready to receive them. Each program has its own message queue, so a program can never receive a message it sent.
-rcv X receives the next value and stores it in register X. If no values are in the queue, the program waits for a value to be sent to it. Programs do not continue to the next instruction until they have received a value. Values are received in the order they are sent.
+snd X sends the value of X to the other program. These values wait in a queue until that program is ready to receive them.
+Each program has its own message queue, so a program can never receive a message it sent.
+rcv X receives the next value and stores it in register X. If no values are in the queue, the program waits for a value to be sent to it.
+Programs do not continue to the next instruction until they have received a value. Values are received in the order they are sent.
 Each program also has its own program ID (one 0 and the other 1); the register p should begin with this value.
 
 For example:
@@ -62,11 +68,16 @@ rcv a
 rcv b
 rcv c
 rcv d
-Both programs begin by sending three values to the other. Program 0 sends 1, 2, 0; program 1 sends 1, 2, 1. Then, each program receives a value (both 1) and stores it in a, receives another value (both 2) and stores it in b, and then each receives the program ID of the other program (program 0 receives 1; program 1 receives 0) and stores it in c. Each program now sees a different value in its own copy of register c.
+Both programs begin by sending three values to the other. Program 0 sends 1, 2, 0; program 1 sends 1, 2, 1.
+Then, each program receives a value (both 1) and stores it in a, receives another value (both 2) and stores it in b,
+ and then each receives the program ID of the other program (program 0 receives 1; program 1 receives 0) and stores it in c.
+  Each program now sees a different value in its own copy of register c.
 
-Finally, both programs try to rcv a fourth time, but no data is waiting for either of them, and they reach a deadlock. When this happens, both programs terminate.
+Finally, both programs try to rcv a fourth time, but no data is waiting for either of them, and they reach a deadlock.
+ When this happens, both programs terminate.
 
-It should be noted that it would be equally valid for the programs to run at different speeds; for example, program 0 might have sent all three values and then stopped at the first rcv before program 1 executed even its first instruction.
+It should be noted that it would be equally valid for the programs to run at different speeds; for example,
+program 0 might have sent all three values and then stopped at the first rcv before program 1 executed even its first instruction.
 
 Once both of your programs have terminated (regardless of what caused them to do so), how many times did program 1 send a value?
 
@@ -76,17 +87,18 @@ data class RegisterSound(val currentValue: Long = 0, val lastSound: Long = 0)
 typealias Registers = MutableMap<Char, RegisterSound>
 
 object Day18 {
-    abstract class Instruction
     abstract class InstrVal
     data class RegisterVal(val register: Char) : InstrVal()
     data class NumberVal(val number: Long) : InstrVal()
+
+    abstract class Instruction
     data class Snd(val register: Char) : Instruction()
+    data class Rcv(val register: Char) : Instruction()
     data class Set(val register: Char, val value: InstrVal) : Instruction()
     data class Add(val register: Char, val value: InstrVal) : Instruction()
     data class Mul(val register: Char, val value: InstrVal) : Instruction()
     data class Mod(val register: Char, val value: InstrVal) : Instruction()
-    data class Rcv(val register: Char) : Instruction()
-    data class Jgz(val register: Char, val value: InstrVal) : Instruction()
+    data class Jgz(val register: InstrVal, val value: InstrVal) : Instruction()
 
 
     fun firstStar(input: List<String>): Long {
@@ -97,7 +109,7 @@ object Day18 {
         while (currentIndex < instructions.size) {
             val instruction = instructions[currentIndex]
 
-            when(instruction) {
+            when (instruction) {
                 is Snd -> {
                     val registerSound = registers[instruction.register] ?: RegisterSound()
                     registers.put(instruction.register, registerSound.copy(lastSound = registerSound.currentValue))
@@ -125,12 +137,12 @@ object Day18 {
                 is Rcv -> {
                     val registerSound = registers[instruction.register] ?: RegisterSound()
                     if (registerSound.currentValue != 0L && registerSound.lastSound != 0L)
-                        return firstStar@registerSound.lastSound
+                        return firstStar@ registerSound.lastSound
                 }
                 is Jgz -> {
                     val (register, value) = instruction
-                    val registerSound = registers[register] ?: RegisterSound()
-                    if (registerSound.currentValue > 0L)
+                    val registerSound = getValue(registers, register)
+                    if (registerSound > 0L)
                         currentIndex += getValue(registers, value).toInt()
                     else currentIndex++
                 }
@@ -144,10 +156,121 @@ object Day18 {
         return -1
     }
 
+    data class Program(private val id: Int, private val instructions: List<Instruction>, val registers: MutableMap<Char, Long>) {
+        private val queue = ArrayDeque<Long>()
+        var registersSent = 0
+        var currentInstructionIndex = 0
+
+        fun currentInstruction() = instructions[currentInstructionIndex]
+        fun hasEnded() = currentInstructionIndex >= instructions.size
+        private fun needsToReceive() = instructions[currentInstructionIndex] is Rcv
+        fun isLocked() = needsToReceive() && queue.isEmpty()
+        fun addToQueue(value: Long): Unit {
+            if (queue.size < 50_000)
+                queue.add(value)
+        }
+
+        fun poll(): Long? = queue.poll()
+    }
+
+    data class Programs(private val programA: Program, private val programB: Program) {
+        val programs = listOf(programA, programB)
+        var currentProgram = 0
+
+        fun next(): Program {
+            currentProgram = ((currentProgram + 1) % 2).let { if (programs[it].hasEnded()) currentProgram else it }
+            return programs[currentProgram]
+        }
+
+        fun first() = programA
+        fun isDeadlock() = programA.isLocked() && programB.isLocked()
+        fun shouldTerminate() = isDeadlock() || (programA.hasEnded() && programB.hasEnded())
+        fun sendToQueue(value: Long) {
+            programs[currentProgram].registersSent++
+            programs[(currentProgram + 1) % 2].addToQueue(value)
+        }
+    }
+
+    fun secondStar(input: List<String>): Int {
+        val instructions = parseInstructions(input)
+        val programs = Programs(Program(0, instructions, mutableMapOf('p' to 0L)),
+                Program(1, instructions, mutableMapOf('p' to 1L)))
+
+        var currentProgram = programs.first()
+        var id = -1
+
+        loop@ while (!programs.shouldTerminate()) {
+            val instruction = currentProgram.currentInstruction()
+            val registers = currentProgram.registers
+
+            if (++id % 1_000_000 == 0)
+                println(id)
+
+            when (instruction) {
+                is Set -> {
+                    val (register, value) = instruction
+                    registers.put(register, getValue2(registers, value))
+                }
+                is Add -> {
+                    val (register, value) = instruction
+                    val previous = registers[register] ?: 0L
+                    registers.put(register, previous + getValue2(registers, value))
+                }
+                is Mul -> {
+                    val (register, value) = instruction
+                    val previous = registers[register] ?: 0L
+                    registers.put(register, previous * getValue2(registers, value))
+                }
+
+                is Mod -> {
+                    val (register, value) = instruction
+                    val previous = registers[register] ?: 0L
+                    registers.put(register, previous % getValue2(registers, value))
+                }
+                is Jgz -> {
+                    val (register, value) = instruction
+                    val registerValue = getValue2(registers, register)
+
+                    currentProgram.currentInstructionIndex +=
+                            if (registerValue > 0L) getValue2(registers, value).toInt()
+                            else 1
+                }
+                is Snd -> {
+                    val valueToSend = registers[instruction.register] ?: throw RuntimeException("du[a")
+                    programs.sendToQueue(valueToSend)
+                }
+                is Rcv -> {
+                    val receivedValue = currentProgram.poll()
+                    if (receivedValue == null) {
+                        currentProgram = programs.next()
+                        continue@loop
+                    } else {
+                        if (receivedValue == 0L) throw RuntimeException("hhh")
+                        registers[instruction.register] = receivedValue
+                    }
+                }
+            }
+
+            if (instruction !is Jgz)
+                currentProgram.currentInstructionIndex++
+        }
+
+        return programs.programs[1].registersSent
+    }
+
+
     private fun getValue(registers: Registers, value: InstrVal): Long =
-            when(value) {
+            when (value) {
                 is NumberVal -> value.number
-                is RegisterVal-> registers[value.register]?.currentValue ?: 0
+                is RegisterVal -> registers[value.register]?.currentValue ?: 0L
+                else -> throw IllegalArgumentException()
+            }
+
+
+    private fun getValue2(registers: Map<Char, Long>, value: InstrVal): Long =
+            when (value) {
+                is NumberVal -> value.number
+                is RegisterVal -> registers[value.register] ?: 0L
                 else -> throw IllegalArgumentException()
             }
 
@@ -161,7 +284,7 @@ object Day18 {
                     "mul" -> Mul(register, instrVal(it[2]))
                     "mod" -> Mod(register, instrVal(it[2]))
                     "rcv" -> Rcv(register)
-                    else -> Jgz(register, instrVal(it[2]))
+                    else -> Jgz(instrVal(it[1]), instrVal(it[2]))
                 }
             }
 
@@ -173,5 +296,5 @@ object Day18 {
 
 fun main(args: Array<String>) {
     val input = File("src/advent/Day18-input").readLines()
-    println(Day18.firstStar(input))
+    println(Day18.secondStar(input))
 }
