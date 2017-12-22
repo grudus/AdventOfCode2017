@@ -183,7 +183,7 @@ object Day18 {
         }
 
         fun first() = programA
-        fun isDeadlock() = programA.isLocked() && programB.isLocked()
+        private fun isDeadlock() = programA.isLocked() && programB.isLocked()
         fun shouldTerminate() = isDeadlock() || (programA.hasEnded() && programB.hasEnded())
         fun sendToQueue(value: Long) {
             programs[currentProgram].registersSent++
@@ -197,14 +197,11 @@ object Day18 {
                 Program(1, instructions, mutableMapOf('p' to 1L)))
 
         var currentProgram = programs.first()
-        var id = -1
 
         loop@ while (!programs.shouldTerminate()) {
             val instruction = currentProgram.currentInstruction()
             val registers = currentProgram.registers
 
-            if (++id % 1_000_000 == 0)
-                println(id)
 
             when (instruction) {
                 is Set -> {
@@ -221,7 +218,6 @@ object Day18 {
                     val previous = registers[register] ?: 0L
                     registers.put(register, previous * getValue2(registers, value))
                 }
-
                 is Mod -> {
                     val (register, value) = instruction
                     val previous = registers[register] ?: 0L
@@ -236,7 +232,7 @@ object Day18 {
                             else 1
                 }
                 is Snd -> {
-                    val valueToSend = registers[instruction.register] ?: throw RuntimeException("du[a")
+                    val valueToSend = registers[instruction.register] ?: 0L
                     programs.sendToQueue(valueToSend)
                 }
                 is Rcv -> {
@@ -244,10 +240,7 @@ object Day18 {
                     if (receivedValue == null) {
                         currentProgram = programs.next()
                         continue@loop
-                    } else {
-                        if (receivedValue == 0L) throw RuntimeException("hhh")
-                        registers[instruction.register] = receivedValue
-                    }
+                    } else registers[instruction.register] = receivedValue
                 }
             }
 
@@ -296,5 +289,6 @@ object Day18 {
 
 fun main(args: Array<String>) {
     val input = File("src/advent/Day18-input").readLines()
+    println(Day18.firstStar(input))
     println(Day18.secondStar(input))
 }
