@@ -1,7 +1,7 @@
 package advent
 
 import java.io.File
-import java.lang.Math.*
+import java.lang.Math.abs
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -37,6 +37,36 @@ p=<-8,0,0>, v=<-6,0,0>, a=<-2,0,0>                         (0)
 At this point, particle 1 will never be closer to <0,0,0> than particle 0, and so, in the long run, particle 0 will stay closest.
 
 Which particle will stay closest to position <0,0,0> in the long term?*/
+
+/*--- Part Two ---
+
+To simplify the problem further, the GPU would like to remove any particles that collide. Particles collide if their positions ever exactly match. Because particles are updated simultaneously, more than two particles can collide at the same time and place. Once particles collide, they are removed and cannot collide with anything else after that tick.
+
+For example:
+
+p=<-6,0,0>, v=< 3,0,0>, a=< 0,0,0>
+p=<-4,0,0>, v=< 2,0,0>, a=< 0,0,0>    -6 -5 -4 -3 -2 -1  0  1  2  3
+p=<-2,0,0>, v=< 1,0,0>, a=< 0,0,0>    (0)   (1)   (2)            (3)
+p=< 3,0,0>, v=<-1,0,0>, a=< 0,0,0>
+
+p=<-3,0,0>, v=< 3,0,0>, a=< 0,0,0>
+p=<-2,0,0>, v=< 2,0,0>, a=< 0,0,0>    -6 -5 -4 -3 -2 -1  0  1  2  3
+p=<-1,0,0>, v=< 1,0,0>, a=< 0,0,0>             (0)(1)(2)      (3)
+p=< 2,0,0>, v=<-1,0,0>, a=< 0,0,0>
+
+p=< 0,0,0>, v=< 3,0,0>, a=< 0,0,0>
+p=< 0,0,0>, v=< 2,0,0>, a=< 0,0,0>    -6 -5 -4 -3 -2 -1  0  1  2  3
+p=< 0,0,0>, v=< 1,0,0>, a=< 0,0,0>                       X (3)
+p=< 1,0,0>, v=<-1,0,0>, a=< 0,0,0>
+
+------destroyed by collision------
+------destroyed by collision------    -6 -5 -4 -3 -2 -1  0  1  2  3
+------destroyed by collision------                      (3)
+p=< 0,0,0>, v=<-1,0,0>, a=< 0,0,0>
+In this example, particles 0, 1, and 2 are simultaneously destroyed at the time and place marked X. On the next tick, particle 3 passes through unharmed.
+
+How many particles are left after all collisions are resolved?*/
+
 data class Point3d(val x: Int, val y: Int, val z: Int)
 
 typealias Position = Point3d
@@ -49,12 +79,17 @@ object Day20 {
     private val pattern: Pattern = Regex("p=<(-?\\d+),(-?\\d+),(-?\\d+)>, v=<(-?\\d+),(-?\\d+),(-?\\d+)>, a=<(-?\\d+),(-?\\d+),(-?\\d+)>").toPattern()
 
     fun firstStar(input: List<String>): Int =
+            parseParticles(input)
+                    .map { it.acceleration }
+                    .map { acceleration -> abs(acceleration.x) + abs(acceleration.y) + abs(acceleration.z) }
+                    .withIndex()
+                    .minBy { it.value }!!.index
+
+    private fun parseParticles(input: List<String>): List<Particle> =
             input.map { line -> pattern.matcher(line) }
                     .map { matcher -> matcher.findGroups() }
                     .map { groups -> groups.map { it.toInt() } }
-                    .map { numbers -> Acceleration(numbers[6], numbers[7], numbers[8]) }
-                    .mapIndexed { index, acceleration -> IndexedValue(index, abs(acceleration.x) + abs(acceleration.y) + abs(acceleration.z)) }
-                    .minBy { it.value }!!.index
+                    .map { Particle(Position(it[0], it[1], it[2]), Velocity(it[3], it[4], it[5]), Acceleration(it[6], it[7], it[8])) }
 
 
     private fun Matcher.findGroups(): List<String> =
