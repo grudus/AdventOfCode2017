@@ -2,8 +2,10 @@ package advent
 
 import java.io.File
 import java.lang.Math.abs
+import java.lang.Math.sqrt
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import kotlin.math.roundToInt
 
 /*--- Day 20: Particle Swarm ---
 
@@ -67,7 +69,9 @@ In this example, particles 0, 1, and 2 are simultaneously destroyed at the time 
 
 How many particles are left after all collisions are resolved?*/
 
-data class Point3d(val x: Int, val y: Int, val z: Int)
+data class Point3d(val x: Int, val y: Int, val z: Int) {
+    operator fun plus(point: Point3d) = Point3d(x + point.x, y + point.y, z + point.z)
+}
 
 typealias Position = Point3d
 typealias Velocity = Point3d
@@ -80,10 +84,31 @@ object Day20 {
 
     fun firstStar(input: List<String>): Int =
             parseParticles(input)
-                    .map { it.acceleration }
+                    .map { particle ->  particle.acceleration }
                     .map { acceleration -> abs(acceleration.x) + abs(acceleration.y) + abs(acceleration.z) }
                     .withIndex()
                     .minBy { it.value }!!.index
+
+
+    fun secondStar(input: List<String>): Int {
+        var particles = parseParticles(input)
+        var bruteForceAttempts = 10_000
+
+        while (--bruteForceAttempts > 0) {
+            val grouped: Map<Position, List<Particle>> = particles.groupBy { it.position }
+            val collision: Set<Position> = grouped.filter { it.value.size > 1 }.keys
+
+            particles = particles
+                    .filter { !collision.contains(it.position) }
+                    .map {
+                        val newVelocity = it.velocity + it.acceleration
+                        Particle(it.position + newVelocity, newVelocity, it.acceleration)
+                    }
+        }
+
+        return particles.size
+    }
+
 
     private fun parseParticles(input: List<String>): List<Particle> =
             input.map { line -> pattern.matcher(line) }
@@ -100,4 +125,5 @@ fun main(args: Array<String>) {
     val input = File("src/advent/Day20-input").readLines()
 
     println(Day20.firstStar(input))
+    println(Day20.secondStar(input))
 }
